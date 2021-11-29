@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:14.1-bullseye
+    volumes:
+      - pg_data:/var/lib/postgres/data
+      - ./build/postgres/initdb/:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "govivint"
+      POSTGRES_DB: "govivint"
+      POSTGRES_PASSWORD: "98CFliD9l*Iinb@clOM!"
+
+  govivint:
+    build:
+      context: .
+    volumes:
+      - ./:/home/golang/app
+    command: ['go', 'run', 'main.go']
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: "postgres"
+      POSTGRES_USER: "govivint"
+      POSTGRES_DB: "govivint"
+      POSTGRES_PASSWORD: "98CFliD9l*Iinb@clOM!"
+
+
+volumes:
+  pg_data: {}
