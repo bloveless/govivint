@@ -36,7 +36,7 @@ type SystemInfo struct {
 		Cn         string `json:"cn"`
 		Parameters []struct {
 			Devices []struct {
-				Id   int      `json:"_id"`
+				Id   float64  `json:"_id"`
 				Type string   `json:"t"`
 				Name string   `json:"n"`
 				Vd   []string `json:"vd"`
@@ -95,6 +95,8 @@ func main() {
 	json.NewDecoder(loginResponse.Body).Decode(&loginInfo)
 	log.Printf("LoginInfo %+v", loginInfo)
 
+	deviceMap := make(map[float64]string)
+
 	for _, system := range loginInfo.Users.System {
 		log.Printf("Getting panel devices: %d", system.PanelId)
 		devicesRequest, err := client.Get(VivintSkyEndpoint + "systems/" + strconv.FormatInt(system.PanelId, 10) + "?includerules=false")
@@ -106,7 +108,21 @@ func main() {
 		systemInfo := SystemInfo{}
 		json.NewDecoder(devicesRequest.Body).Decode(&systemInfo)
 		log.Printf("System Info: %+v", systemInfo)
+
+		for _, param := range systemInfo.System.Parameters {
+			for _, device := range param.Devices {
+				deviceMap[device.Id] = device.Name
+				// TODO: This should be a batch insert instead of one by one
+				sql := `INSERT INTO vivint_device(vivint_id, name, type) VALUES ($1, $2, $3) ON CONFLICT (vivint_id) DO UPDATE SET name=EXCLUDED.name, type=EXCLUDED.type;`
+				_, err := db.Exec(sql, device.Id, device.Name, device.Name)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
 	}
+
+	log.Printf("DeviceMap: %+v", deviceMap)
 
 	// config := pubnub.NewConfig()
 	config := pubnub.NewConfig()
@@ -153,44 +169,36 @@ func main() {
 					// message.Subscription
 				}
 
-				log.Println("---------------================== Start Message ==================---------------")
 				if msg, ok := message.Message.(map[string]interface{}); ok {
-					log.Println("msg", msg["da"])
-
 					if da, ok := msg["da"].(map[string]interface{}); ok {
-						log.Println("da", da)
-						log.Println("da[d]", da["d"])
+						if devices, ok := da["d"].([]interface{}); ok {
+							log.Println("---------------================== Start Message ==================---------------")
+							log.Printf("Devices: %+v", devices)
+							messageString, err := json.Marshal(message.Message)
+							if err != nil {
+								log.Fatal(err)
+							}
 
-						if d, ok := da["d"].([]map[string]interface{}); ok {
-							log.Println("d", d)
-						} else {
-							log.Println("not []map[string]interface{}")
+							log.Println("messageString", string(messageString))
+
+							devicesString, err := json.Marshal(devices)
+							if err != nil {
+								log.Fatal(err)
+							}
+
+							log.Println("devicesString", string(devicesString))
+							log.Println("timeToken", message.Timetoken)
+
+							sql := `INSERT INTO vivint_event(devices, data) VALUES ($1, $2);`
+							_, err = db.Exec(sql, string(devicesString), string(messageString))
+							if err != nil {
+								log.Fatal(err)
+							}
+
+							log.Println("---------------================== End Message ==================---------------")
 						}
 					}
-
-					// log.Println("msg[\"da\"][\"d\"][0][\"_id\"]", msg["da"]["d"][0]["_id"])
 				}
-
-				b, err := json.Marshal(message.Message)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				log.Println(string(b))
-
-				log.Println("---------------================== End Start Message ==================---------------")
-
-				// log.Println(message.Message)
-
-				// log.Println(message.Subscription)
-				// log.Println(message.Timetoken)
-
-				/*
-				   log the following items with your favorite logger
-				       - message.Message
-				       - message.Subscription
-				       - message.Timetoken
-				*/
 
 				// donePublish <- true
 			case <-listener.Presence:

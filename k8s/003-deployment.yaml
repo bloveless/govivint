@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: govivint
+  namespace: govivint
+  labels:
+    app: govivint
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: govivint
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: govivint
+        component: backend
+    spec:
+      containers:
+        - name: govivint
+          image: bloveless/govivint:0.0.3
+          env:
+            - name: VIVINT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: govivint
+                  key: VIVINT_USERNAME
+            - name: VIVINT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: govivint
+                  key: VIVINT_PASSWORD
+            - name: POSTGRES_HOST
+              value: "192.168.4.246"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: govivint
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: govivint
+                  key: POSTGRES_DB
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: govivint
+                  key: POSTGRES_PASSWORD
