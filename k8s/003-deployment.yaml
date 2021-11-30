@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: govivint
-          image: bloveless/govivint:0.0.3
+          image: bloveless/govivint:0.0.4
           env:
             - name: VIVINT_USERNAME
               valueFrom:

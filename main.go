@@ -169,16 +169,18 @@ func main() {
 					// message.Subscription
 				}
 
+				messageString, err := json.Marshal(message.Message)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				insertedDeviceRecord := false
 				if msg, ok := message.Message.(map[string]interface{}); ok {
 					if da, ok := msg["da"].(map[string]interface{}); ok {
 						if devices, ok := da["d"].([]interface{}); ok {
-							log.Println("---------------================== Start Message ==================---------------")
+							log.Println("---------------================== Start Device Message ==================---------------")
+							insertedDeviceRecord = true
 							log.Printf("Devices: %+v", devices)
-							messageString, err := json.Marshal(message.Message)
-							if err != nil {
-								log.Fatal(err)
-							}
-
 							log.Println("messageString", string(messageString))
 
 							devicesString, err := json.Marshal(devices)
@@ -187,7 +189,6 @@ func main() {
 							}
 
 							log.Println("devicesString", string(devicesString))
-							log.Println("timeToken", message.Timetoken)
 
 							sql := `INSERT INTO vivint_event(devices, data) VALUES ($1, $2);`
 							_, err = db.Exec(sql, string(devicesString), string(messageString))
@@ -195,9 +196,20 @@ func main() {
 								log.Fatal(err)
 							}
 
-							log.Println("---------------================== End Message ==================---------------")
+							log.Println("---------------================== End Device Message ==================---------------")
 						}
 					}
+				}
+
+				if !insertedDeviceRecord {
+					log.Println("---------------================== Start Message ==================---------------")
+					log.Println("messageString", string(messageString))
+					sql := `INSERT INTO vivint_event(data) VALUES ($1);`
+					_, err = db.Exec(sql, string(messageString))
+					if err != nil {
+						log.Fatal(err)
+					}
+					log.Println("---------------================== End Message ==================---------------")
 				}
 
 				// donePublish <- true
