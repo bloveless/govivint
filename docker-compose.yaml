@@ -12,7 +12,6 @@ services:
       POSTGRES_PASSWORD: "98CFliD9l*Iinb@clOM!"
 
   govivint:
-    image: bloveless/govivint:0.0.2
     build:
       context: .
       target: base
@@ -26,7 +25,7 @@ services:
       POSTGRES_USER: "govivint"
       POSTGRES_DB: "govivint"
       POSTGRES_PASSWORD: "98CFliD9l*Iinb@clOM!"
-
+      DEVICE_UUID: "ba7abaaf-d831-4a83-9095-1491fab191ea"
 
 volumes:
   pg_data: {}

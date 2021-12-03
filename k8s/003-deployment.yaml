@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: govivint
-          image: bloveless/govivint:0.0.4
+          image: bloveless/govivint:0.0.10
           env:
             - name: VIVINT_USERNAME
               valueFrom:
@@ -49,3 +49,5 @@ spec:
                 secretKeyRef:
                   name: govivint
                   key: POSTGRES_PASSWORD
+            - name: DEVICE_UUID
+              value: "8dae9dbd-0e50-4b98-a3a3-96660fafb9eb"
