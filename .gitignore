@@ -1,4 +1,6 @@
 .env
+.env.local
 k8s/002-secrets.yaml
+.idea
 
 Session.vim
